@@ -3,6 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginForm = document.getElementById("login-form");
+  const loginStatus = document.getElementById("login-status");
+  const currentUserSpan = document.getElementById("current-user");
+  const logoutButton = document.getElementById("logout-button");
+  const signupSection = document.getElementById("signup-container");
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -124,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          credentials: "same-origin"
         }
       );
 
@@ -155,6 +161,103 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const response = await fetch("/login", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setSessionState(result.user);
+        messageDiv.textContent = "Login successful.";
+        messageDiv.className = "success";
+        messageDiv.classList.remove("hidden");
+        fetchActivities();
+      } else {
+        messageDiv.textContent = result.detail || "Login failed.";
+        messageDiv.className = "error";
+        messageDiv.classList.remove("hidden");
+      }
+
+      setTimeout(() => {
+        messageDiv.classList.add("hidden");
+      }, 5000);
+    } catch (error) {
+      messageDiv.textContent = "Unable to log in. Please try again.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      console.error("Login error:", error);
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/logout", {
+        method: "POST",
+        credentials: "same-origin"
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setSessionState(null);
+        messageDiv.textContent = result.message;
+        messageDiv.className = "info";
+        messageDiv.classList.remove("hidden");
+      } else {
+        messageDiv.textContent = result.detail || "Logout failed.";
+        messageDiv.className = "error";
+        messageDiv.classList.remove("hidden");
+      }
+    } catch (error) {
+      messageDiv.textContent = "Unable to log out. Please try again.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      console.error("Logout error:", error);
+    }
+
+    setTimeout(() => {
+      messageDiv.classList.add("hidden");
+    }, 5000);
+  });
+
+  async function refreshSession() {
+    try {
+      const response = await fetch("/session", {
+        credentials: "same-origin"
+      });
+      const result = await response.json();
+      setSessionState(result.user);
+    } catch (error) {
+      console.error("Failed to refresh session:", error);
+      setSessionState(null);
+    }
+  }
+
+  function setSessionState(user) {
+    if (user) {
+      loginForm.classList.add("hidden");
+      loginStatus.classList.remove("hidden");
+      signupSection.classList.remove("hidden");
+      currentUserSpan.textContent = `${user.username} (${user.role})`;
+    } else {
+      loginForm.classList.remove("hidden");
+      loginStatus.classList.add("hidden");
+      signupSection.classList.add("hidden");
+      currentUserSpan.textContent = "";
+    }
+  }
+
   // Initialize app
+  refreshSession();
   fetchActivities();
 });
