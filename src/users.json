@@ -1,0 +1,12 @@
+{
+  "teacher1": {
+    "password": "teachersecret",
+    "role": "teacher",
+    "email": "teacher@mergington.edu"
+  },
+  "student1": {
+    "password": "studentpass",
+    "role": "student",
+    "email": "student1@mergington.edu"
+  }
+}
